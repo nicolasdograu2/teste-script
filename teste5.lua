@@ -59,7 +59,7 @@ local function toggleNoClip()
     end
 end
 
--- Função para Aimbot baseado na visão e mais próximo
+-- Função para Aimbot (somente nos inimigos, mais próximo, dentro da linha de visão)
 local function toggleAimbot()
     aimbotEnabled = not aimbotEnabled
     if aimbotEnabled then
@@ -73,14 +73,19 @@ local function toggleAimbot()
                 if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character then
                     local torso = player.Character:FindFirstChild("UpperTorso") or player.Character:FindFirstChild("HumanoidRootPart")
                     if torso then
-                        local screenPosition, onScreen = camera:WorldToViewportPoint(torso.Position)
+                        -- Verificar se o jogador está na linha de visão
+                        local ray = Ray.new(camera.CFrame.Position, (torso.Position - camera.CFrame.Position).unit * 500)
+                        local hitPart, hitPosition = workspace:FindPartOnRay(ray, LocalPlayer.Character)
 
-                        if onScreen then
-                            local mousePosition = UserInputService:GetMouseLocation()
-                            local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
-                            if distance < shortestDistance then
-                                closestPlayer = player
-                                shortestDistance = distance
+                        if hitPart and hitPart.Parent == player.Character then
+                            local screenPosition, onScreen = camera:WorldToViewportPoint(torso.Position)
+                            if onScreen then
+                                local mousePosition = UserInputService:GetMouseLocation()
+                                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
+                                if distance < shortestDistance then
+                                    closestPlayer = player
+                                    shortestDistance = distance
+                                end
                             end
                         end
                     end
@@ -205,22 +210,22 @@ local function createButton(name, func, yPos)
     button.Font = Enum.Font.SourceSansBold
     button.TextSize = 18
     button.BackgroundTransparency = 0.2
-    button.TextButton.MouseEnter:Connect(function()
+    button.MouseEnter:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
     end)
-    button.TextButton.MouseLeave:Connect(function()
+    button.MouseLeave:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(0, 128, 255)
     end)
 end
 
 -- Adicionando todos os botões ao painel
-createButton("No Clip", toggleNoClip, 10)  -- No Clip
-createButton("Reviver", reviveAtDeathPosition, 60)  -- Reviver
-createButton("Aimbot", toggleAimbot, 110)  -- Aimbot
-createButton("Speed", toggleSpeed, 160)  -- Speed
-createButton("Hitbox", toggleHitbox, 210)  -- Hitbox
-createButton("ESP", toggleESP, 260)  -- ESP
-createButton("Restart", restartScript, 310)  -- Restart
+createButton("No Clip", toggleNoClip, 10)
+createButton("Reviver", reviveAtDeathPosition, 60)
+createButton("Aimbot", toggleAimbot, 110)
+createButton("Speed", toggleSpeed, 160)
+createButton("Hitbox", toggleHitbox, 210)
+createButton("ESP", toggleESP, 260)
+createButton("Restart", restartScript, 310)
 
 -- Tecla para abrir/fechar o painel
 UserInputService.InputBegan:Connect(function(input)
@@ -260,5 +265,4 @@ local function dragPanel(panel)
     end)
 end
 
--- Ativar movimentação do painel
 dragPanel(mainFrame)
